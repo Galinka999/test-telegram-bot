@@ -15,7 +15,6 @@ class TelegramCallbackController extends Controller
     public function index(Request $request)
     {
         dd($dateAfter = now()->subYears(18));
-//        dd();
     }
 
     public function callback(Request $request, TelegramBotApiContract $service): void
