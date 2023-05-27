@@ -14,32 +14,12 @@ class TelegramCallbackController extends Controller
 {
     public function index(Request $request)
     {
-        $state = TelegramState::query()->orderBy('id', 'desc')->first();
-        dd();
+        dd($dateAfter = now()->subYears(18));
+//        dd();
     }
 
     public function callback(Request $request, TelegramBotApiContract $service): void
     {
-//        $state = TelegramState::query()->orderBy('id', 'desc')->first();
-//        if($state->is_active) {
-//            Log::debug('222222');
-//            if($state->state == StateType::NAME) {
-//                try {
-//                    $validated = $request->validate([
-//                        'message.text' => 'regex:/^[а-яА-ЯЁё0-9]{0,255}$/'
-//                    ]);
-//                    Log::debug(55);
-//                    $service->sendMessage(json_encode($validated, JSON_UNESCAPED_UNICODE));
-//                    return;
-//                } catch (\Throwable $e) {
-//                    Log::debug('44444');
-//                    $text = "ФИО должно быть строкой";
-//                    $service->sendMessage($text);
-//                    return;
-//                }
-//            }
-//        }
-
         $data = $request->all();
 
         $state = TelegramState::query()->orderBy('id', 'desc')->first();
@@ -53,7 +33,6 @@ class TelegramCallbackController extends Controller
         if(isset($data['message'])) {
             Log::info($data['message']);
             $method = $data['message']['text'];
-            Log::debug($method);
 
             if($state && $state->is_active) {
 
@@ -73,44 +52,66 @@ class TelegramCallbackController extends Controller
                     $state->state = StateType::PHONE;
                     $state->save();
 
-                    $text = "Введите номер телефона";
+                    $text = "Введите номер телефона. \n Формат ввода: \n +79999999999";
                     $service->sendMessage($text);
                     return;
                 } elseif ($state->state == StateType::PHONE) {
-                    $array = $state->data;
-                    $array['phone'] = $method;
-                    $state->data = $array;
-                    $state->state = StateType::BIRTHDAY;
-                    $state->save();
+                    try {
+                        $validated = $request->validate([
+                            'message.text' => 'regex:/^((\+7)+([0-9]){10})$/'
+                        ]);
+                        $array = $state->data;
+                        $array['phone'] = $method;
+                        $state->data = $array;
+                        $state->state = StateType::BIRTHDAY;
+                        $state->save();
 
-                    $text = "Введите дату рождения";
-                    $service->sendMessage($text);
-                    return;
+                        $text = "Введите дату рождения";
+                        $service->sendMessage($text);
+                        return;
+                    } catch (\Throwable $e) {
+                        $text = "Номер телефона должен соответствовать формату: \n +79999999999";
+                        $service->sendMessage($text);
+                        return;
+                    }
                 } elseif ($state->state == StateType::BIRTHDAY) {
-                    $array = $state->data;
-                    $array['birthday'] = $method;
-                    $state->data = $array;
-                    $state->save();
+                    try {
+                        $dateAfter = now()->subYears(100);
+                        $dateBefore = now()->subYears(18);
 
-                    $state = TelegramState::query()->orderBy('id', 'desc')->first();
-                    $array = $state->data;
-                    $button = [
-                        'inline_keyboard' => [
-                            [
+                        $validated = $request->validate([
+                            'message.text' => "date|after:$dateAfter|before:$dateBefore"
+                        ]);
+
+                        $array = $state->data;
+                        $array['birthday'] = $method;
+                        $state->data = $array;
+                        $state->save();
+
+                        $state = TelegramState::query()->orderBy('id', 'desc')->first();
+                        $array = $state->data;
+                        $button = [
+                            'inline_keyboard' => [
                                 [
-                                    'text' => 'Сохранить',
-                                    'callback_data' => "save"
+                                    [
+                                        'text' => 'Сохранить',
+                                        'callback_data' => "save"
+                                    ],
                                 ],
-                            ],
-                            [
                                 [
-                                    'text' => 'Отменить',
-                                    'callback_data' => "close"
-                                ],
+                                    [
+                                        'text' => 'Отменить',
+                                        'callback_data' => "close"
+                                    ],
+                                ]
                             ]
-                        ]
-                    ];
-                    $service->sendMessage((string)view('users.add_worker', $array), json_encode($button));
+                        ];
+                        $service->sendMessage((string)view('users.add_worker', $array), json_encode($button));
+                    } catch (\Throwable $e) {
+                        $text = $e->getMessage();
+                        $service->sendMessage($text);
+                        return;
+                    }
                 }
                 return;
             }
@@ -155,7 +156,6 @@ class TelegramCallbackController extends Controller
             Log::info($data['callback_query']);
             $array = $data['callback_query']['data'];
             $method = explode('.', $array);
-            Log::debug($method);
 
             switch ($method[0]) {
                 case 'store':
