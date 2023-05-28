@@ -21,15 +21,15 @@ class UsersExport implements FromCollection, WithHeadings
             'ФИО',
             'Должность',
             'Телефон',
-            'День рождения',
-            'Принят на работу',
-            'Уволен',
+            'Дата рождения',
+            'Дата принятия на работу',
+            'Дата увольнения',
         ];
     }
 
     public function collection(): Collection|\Illuminate\Support\Collection
     {
-        return User::withTrashed()->get([
+        return User::withTrashed()->orderBy('id')->get([
             'id',
             'name',
             'position',

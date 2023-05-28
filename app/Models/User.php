@@ -23,5 +23,7 @@ class User extends Authenticatable
 
     protected $casts = [
         'birthday' => 'date:Y-m-d',
+        'created_at' => 'date:Y-m-d H:i',
+        'deleted_at' => 'date:Y-m-d H:i',
     ];
 }

@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Services\Telegram\TelegramBotApiContract;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class SetWebhookTelegramBotCommand extends Command
 {
@@ -14,15 +15,17 @@ class SetWebhookTelegramBotCommand extends Command
 
     public function handle(TelegramBotApiContract $service): void
     {
-        $url = config('services.telegram.webhook');
+        try {
+            $url = config('services.telegram.webhook');
 
-        $response = $service->setWebhook($url);
+            $service->setWebhook($url);
+            $this->alert('Вебхук успешно установлен.');
 
-        if(!$response) {
-            $this->alert('Вебхук не установлен. Попробуйте еще раз.');
             return;
+        } catch (\Throwable $e) {
+            Log::debug($e->getMessage());
+            $this->alert('Вебхук не установлен. Попробуйте еще раз.');
         }
 
-        $this->alert('Вебхук успешно установлен.');
     }
 }

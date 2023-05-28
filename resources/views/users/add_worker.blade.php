@@ -2,5 +2,5 @@
 <i>ФИО - </i> {{ $name}}
 <i>Должность - </i> {{ $position }}
 <i>Телефон - </i> {{ $phone }}
-<i>Дата рождения - </i> {{ $birthday->format('d.m.Y') }}
+<i>Дата рождения - </i> {{ $birthday }}
 
